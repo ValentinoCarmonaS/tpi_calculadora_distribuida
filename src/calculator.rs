@@ -24,7 +24,7 @@ impl Calculator {
     /// # Errors:
     ///
     /// Returns "CalculatorErrors::DivisionByZero" if a division by zero is attempted
-    pub fn apply(&mut self, op: Operation) -> Result<(), CalculatorErrors> {
+    pub fn apply(&mut self, op: Operation) -> Result<Option<u8>, CalculatorErrors> {
         match op {
             Operation::Add(operand) => self.value = self.value.wrapping_add(operand),
             Operation::Sub(operand) => self.value = self.value.wrapping_sub(operand),
@@ -34,9 +34,10 @@ impl Calculator {
                     return Err(CalculatorErrors::DivisionByZero);
                 }
                 self.value = self.value.wrapping_div(operand)
-            }
+            },
+            Operation::Get => return Ok(Some(self.value)),
         }
-        Ok(())
+        Ok(None)
     }
 }
 

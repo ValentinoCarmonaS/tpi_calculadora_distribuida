@@ -12,6 +12,8 @@ pub enum Operation {
     Mul(u8),
     /// Divides the calculator's value by the given value
     Div(u8),
+    /// Gets the calculator's value
+    Get,
 }
 
 impl FromStr for Operation {
@@ -32,25 +34,39 @@ impl FromStr for Operation {
         // Split the string into tokens separated by whitespace.
         let tokens: Vec<&str> = s.split_whitespace().collect();
 
-        // Try to convert the vector into a statically-sized array of 2 elements, failing otherwise.
-        let [operation, operand] = match tokens.try_into() {
-            Ok(array) => array,
-            Err(_) => return Err(CalculatorErrors::ParseFailure),
-        };
+        match tokens[0] {
+            "GET" => {
+                if tokens.len() != 1 {
+                    return Err(CalculatorErrors::ParseFailure);
+                }
+                Ok(Self::Get)
+            },
+            "OP" => {
+                if tokens.len() != 3 {
+                    return Err(CalculatorErrors::ParseFailure);
+                }
 
-        // Parse the operand into an u8.
-        let operand: u8 = match operand.parse() {
-            Ok(operand) => operand,
-            Err(_) => return Err(CalculatorErrors::ParseFailure),
-        };
+                let operation = tokens[1];
+                let operand = tokens[2];
 
-        match operation {
-            "+" => Ok(Self::Add(operand)),
-            "-" => Ok(Self::Sub(operand)),
-            "*" => Ok(Self::Mul(operand)),
-            "/" => Ok(Self::Div(operand)),
-            _ => Err(CalculatorErrors::InvalidOperation),
+                // Parse the operand into an u8.
+                let operand: u8 = match operand.parse() {
+                    Ok(operand) => operand,
+                    Err(_) => return Err(CalculatorErrors::ParseFailure)
+                };
+
+                match operation {
+                    "+" => Ok(Self::Add(operand)),
+                    "-" => Ok(Self::Sub(operand)),
+                    "*" => Ok(Self::Mul(operand)),
+                    "/" => Ok(Self::Div(operand)),
+                    _ => Err(CalculatorErrors::InvalidOperation)
+                }
+            },
+            _ => Err(CalculatorErrors::ParseFailure)
         }
+
+        
     }
 }
 
