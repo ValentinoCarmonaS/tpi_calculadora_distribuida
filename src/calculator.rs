@@ -34,7 +34,7 @@ impl Calculator {
                     return Err(CalculatorErrors::DivisionByZero);
                 }
                 self.value = self.value.wrapping_div(operand)
-            },
+            }
             Operation::Get => return Ok(Some(self.value)),
         }
         Ok(None)
