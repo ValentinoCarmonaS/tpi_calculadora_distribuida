@@ -9,14 +9,18 @@ pub enum Response {
 
 impl Response {
     pub fn send_response(&self, mut stream: &TcpStream) {
-        match stream.write_all(self.get_message().as_bytes()) {
-            Ok(_) => return,
-            Err(_) => return,
-        }; // Es asi ????????????????????????????????????????????
+        let response = format!("{}\n", self.get_message());
+        if let Err(_) = stream.write_all(response.as_bytes()) {
+            Self::Error(CalculatorErrors::WritingFailure).eprint();
+        };
+
+        if let Err(_) = stream.flush() {
+            Self::Error(CalculatorErrors::WritingFailure).eprint();
+        }
     }
 
     pub fn eprint(&self) {
-        eprintln!("{}", self.get_message())
+        eprintln!("{}\n", self.get_message())
     }
 
     fn get_message(&self) -> String {
