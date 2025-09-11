@@ -1,20 +1,18 @@
-#[path = "./../calculator.rs"]
-mod calculator;
-#[path = "./../errors.rs"]
-mod errors;
-#[path = "./../operation.rs"]
-mod operation;
-#[path = "./../response.rs"]
-mod response;
-
-use std::{
-    env, io::{BufRead, BufReader}, net::{TcpListener, TcpStream}, str::FromStr, sync::{Arc, Mutex}, thread
+use tpi_calculadora_distribuida::{
+    calculator::Calculator,
+    errors::CalculatorErrors,
+    operation::Operation,
+    response::Response,
 };
 
-use crate::calculator::Calculator;
-use crate::errors::CalculatorErrors;
-use crate::operation::Operation;
-use crate::response::Response;
+use std::{
+    env,
+    io::{BufRead, BufReader},
+    net::{TcpListener, TcpStream},
+    str::FromStr,
+    sync::{Arc, Mutex},
+    thread,
+};
 
 fn main() {
     let args: Vec<String> = env::args().collect();
@@ -32,26 +30,26 @@ fn server(addr: &str) {
         Err(_) => {
             Response::Error(CalculatorErrors::SocketFailure).eprint();
             return;
-        } // Error irrecuperable ??????????????????????????????????????????
+        }
     };
 
-    println!("Server alive and listening in port: {}", addr); //....................................................
+    server_listening(listener);
+}
+
+fn server_listening(listener: TcpListener) {
     let counter = Arc::new(Mutex::new(Calculator::default()));
     let mut handles = vec![];
 
     for stream in listener.incoming() {
-        println!("hearing something"); //....................................................
-
         match stream {
             Ok(stream) => {
-                println!("hearing a stream"); //....................................................
                 let counter = Arc::clone(&counter);
                 let handle = thread::spawn(move || {
                     handle_client(stream, counter);
                 });
                 handles.push(handle);
             }
-            Err(_) => Response::Error(CalculatorErrors::ListeningFailure).eprint(), // Error NO irrecuperable ??????????????????????????????????????????
+            Err(_) => Response::Error(CalculatorErrors::ListeningFailure).eprint(),
         }
     }
 
@@ -63,6 +61,28 @@ fn server(addr: &str) {
                 return;
             }
         }
+    }
+}
+
+fn handle_client(stream: TcpStream, counter: Arc<Mutex<Calculator>>) {
+    let reader = BufReader::new(&stream);
+
+    for line in reader.lines() {
+        let line = match line {
+            Ok(line) => line,
+            Err(_) => {
+                Response::Error(CalculatorErrors::ReadLineFailure).send_response(&stream);
+                continue;
+            }
+        };
+
+        match handle_op(line, &counter) {
+            Ok(ans) => match ans {
+                Some(value_ans) => Response::Value(value_ans).send_response(&stream),
+                None => Response::Ok.send_response(&stream),
+            },
+            Err(e) => Response::Error(e).send_response(&stream),
+        };
     }
 }
 
@@ -80,26 +100,3 @@ fn handle_op(
     Ok(calculator.apply(op)?)
 }
 
-fn handle_client(stream: TcpStream, counter: Arc<Mutex<Calculator>>) {
-    let reader = BufReader::new(&stream);
-
-    for line in reader.lines() {
-        let line = match line {
-            Ok(line) => line,
-            Err(_) => {
-                Response::Error(CalculatorErrors::ParseFailure);
-                continue;
-            } // Error en el parseo de la linea, ( irrecuperable para la linea?????????? ) ??????????????????????????????????????????
-        };
-
-        println!("hearing: {}", line); //....................................................
-
-        match handle_op(line, &counter) {
-            Ok(ans) => match ans {
-                Some(value_ans) => Response::Value(value_ans).send_response(&stream),
-                None => Response::Ok.send_response(&stream),
-            },
-            Err(e) => Response::Error(e).send_response(&stream),
-        };
-    }
-}
