@@ -1,39 +1,37 @@
-use std::process::{Command, ExitStatus};
+use std::process::{Child, Command, ExitStatus};
 use std::thread;
 use std::time::Duration;
 
-fn run_test<'a>(addr: &'a str, input_path: &'a str) -> Result<(ExitStatus, String), &'a str> {
-    let mut server = match Command::new("cargo")
-        .arg("run")
-        .arg("--bin")
-        .arg("server")
-        .arg("--")
-        .arg(addr)
-        .spawn()
-    {
-        Ok(output) => output,
-        Err(_) => return Err("Error in command execution"),
-    };
-
-    // Dar tiempo al servidor para inicializar y bindear el socket
-    thread::sleep(Duration::from_millis(500));
-
-    let (status, stdout) = match run_client_with_input_file(addr, input_path) {
-        Ok(ans) => ans,
-        Err(e) => {
-            let _ = server.kill();
-            return Err(e);
-        },
-    };
-
-    // Dar tiempo al cliente para terminar completamente antes de matar el servidor
-    thread::sleep(Duration::from_millis(100));
-    
-    let _ = server.kill();
-    Ok((status, stdout))
+struct TestServer {
+    process: Child,
 }
 
-fn run_client_with_input_file<'a>(addr: &'a str, input_path: &'a str) -> Result<(ExitStatus, String), &'a str> {
+impl TestServer {
+    fn start(addr: &str) -> Result<Self, &'static str> {
+        let process = match Command::new("cargo")
+            .arg("run")
+            .arg("--bin")
+            .arg("server")
+            .arg("--")
+            .arg(addr)
+            .spawn()
+        {
+            Ok(output) => output,
+            Err(_) => return Err("Error starting server"),
+        };
+
+        // Dar tiempo al servidor para inicializar y bindear el socket
+        thread::sleep(Duration::from_millis(500));
+
+        Ok(TestServer { process })
+    }
+
+    fn stop(mut self) {
+        let _ = self.process.kill();
+    }
+}
+
+fn run_client_with_input_file(addr: &str, input_path: &str) -> Result<(ExitStatus, String), &'static str> {
     let output = match Command::new("cargo")
         .arg("run")
         .arg("--bin")
@@ -55,12 +53,39 @@ fn run_client_with_input_file<'a>(addr: &'a str, input_path: &'a str) -> Result<
     Ok((output.status, stdout))
 }
 
+fn run_multiple_clients_concurrent(addr: &str, inputs_paths: Vec<&str>) -> Result<Vec<(ExitStatus, String)>, &'static str> {
+    let mut handles = vec![];
+    for input_path in inputs_paths {
+        let addr_owned = addr.to_string();
+        let input_path_owned = input_path.to_string();
+
+        let handle = thread::spawn(move || {
+            run_client_with_input_file(&addr_owned, &input_path_owned)
+        });
+        handles.push(handle);
+    }
+
+    let mut results = vec![];
+    for handle in handles {
+        match handle.join() {
+            Ok(result) => match result {
+                Ok(result) => results.push(result),
+                Err(e) => return Err(e),
+            }
+            Err(_) => return Err("Thread join failed"),
+        }
+    }
+    
+    Ok(results)
+}
+
 #[test]
 fn test_one_client_e_file() {
-    // ((0 + 1) * 3) + 2 = 5
     let expected = "VALUE 5";
     
-    match run_test("127.0.0.1:8080", "data/e.txt") {
+    let server = TestServer::start("127.0.0.1:8080").expect("Failed to start server");
+    
+    match run_client_with_input_file("127.0.0.1:8080", "data/e.txt") {
         Ok((status, stdout)) => {
             assert!(status.success(), "The program should have succeeded");
             assert!(
@@ -70,6 +95,11 @@ fn test_one_client_e_file() {
                 stdout
             );
         }
-        Err(e) => panic!("{}", e),
+        Err(e) => {
+            server.stop();
+            panic!("{}", e);
+        }
     }
+    
+    server.stop();
 }
