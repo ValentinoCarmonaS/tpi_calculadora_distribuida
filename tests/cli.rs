@@ -82,24 +82,16 @@ fn run_multiple_clients_concurrent(addr: &str, inputs_paths: Vec<&str>) -> Resul
 #[test]
 fn test_one_client_e_file() {
     let expected = "VALUE 5";
-    
     let server = TestServer::start("127.0.0.1:8080").expect("Failed to start server");
+    let (status, stdout) = run_client_with_input_file("127.0.0.1:8080", "data/e.txt").unwrap();
     
-    match run_client_with_input_file("127.0.0.1:8080", "data/e.txt") {
-        Ok((status, stdout)) => {
-            assert!(status.success(), "The program should have succeeded");
-            assert!(
-                stdout.contains(expected),
-                "The stdout doesn't contain the expected value. Expected: '{}', Got: '{}'",
-                expected,
-                stdout
-            );
-        }
-        Err(e) => {
-            server.stop();
-            panic!("{}", e);
-        }
-    }
+    assert!(status.success(), "The program should have succeeded");
+    assert!(
+        stdout.contains(expected),
+        "The stdout doesn't contain the expected value. Expected: '{}', Got: '{}'",
+        expected,
+        stdout
+    );
     
     server.stop();
 }
