@@ -46,22 +46,22 @@ fn read_file(path: &str, mut stream: TcpStream) {
 }
 
 fn send_request(stream: &mut TcpStream, data: String) {
-    if let Err(_) = stream.write_all(format!("{}\n", data).as_bytes()) {
-            return Response::Error(CalculatorErrors::WritingFailure).eprint();
-        };
+    if stream.write_all(format!("{}\n", data).as_bytes()).is_err() {
+        Response::Error(CalculatorErrors::WritingFailure).eprint();
+    };
 
-        if let Err(_) = stream.flush() {
-            return Response::Error(CalculatorErrors::WritingFailure).eprint();
-        };
+    if stream.flush().is_err() {
+        Response::Error(CalculatorErrors::WritingFailure).eprint();
+    };
 }
 
 fn read_response(stream: &mut TcpStream) {
     let mut reader = BufReader::new(stream);
     let mut response = String::new();
-    
-    if let Err(_) = reader.read_line(&mut response) {
+
+    if reader.read_line(&mut response).is_err() {
         return Response::Error(CalculatorErrors::ListeningFailure).eprint();
     };
-    
+
     println!("{}", response)
 }

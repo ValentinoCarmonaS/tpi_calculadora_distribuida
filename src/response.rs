@@ -10,11 +10,11 @@ pub enum Response {
 impl Response {
     pub fn send_response(&self, mut stream: &TcpStream) {
         let response = format!("{}\n", self.get_message());
-        if let Err(_) = stream.write_all(response.as_bytes()) {
+        if stream.write_all(response.as_bytes()).is_err() {
             Self::Error(CalculatorErrors::WritingFailure).eprint();
         };
 
-        if let Err(_) = stream.flush() {
+        if stream.flush().is_err() {
             Self::Error(CalculatorErrors::WritingFailure).eprint();
         }
     }
@@ -25,9 +25,9 @@ impl Response {
 
     fn get_message(&self) -> String {
         match self {
-            Self::Ok => return "OK".to_owned(),
-            Self::Value(value) => return format!("VALUE {}", value),
-            Self::Error(e) => return e.get_message().to_owned(),
+            Self::Ok => "OK".to_owned(),
+            Self::Value(value) => format!("VALUE {}", value),
+            Self::Error(e) => e.get_message().to_owned(),
         }
     }
 }

@@ -29,17 +29,17 @@ impl CalculatorErrors {
     /// Prints the error message to the console
     pub fn get_message(&self) -> &str {
         match self {
-            Self::InvalidOperation => return "ERROR \"Operacion invalida\"",
-            Self::DivisionByZero => return "ERROR \"Division por cero\"",
-            Self::JoinFailure => return "ERROR \"Fallo en el Join\"",
-            Self::LockFailure => return "ERROR \"Fallo en el Lock\"",
-            Self::ParseFailure => return "ERROR \"Fallo en el Parseo\"",
-            Self::WritingFailure => return "ERROR \"Fallo la escritura\"",
-            Self::ListeningFailure => return "ERROR \"Fallo la lectura\"",
-            Self::SocketFailure => return "ERROR \"Fallo el Socket\"",
-            Self::FileOpenFailure => return "ERROR \"Fallo la apertura del archivo\"",
-            Self::ReadLineFailure => return "ERROR \"Fallo la lectura de la linea\"",
-            Self::ArgsLenFailure => return "ERROR \"Fallo la cantidad de argumentos\"",
+            Self::InvalidOperation => "ERROR \"Operacion invalida\"",
+            Self::DivisionByZero => "ERROR \"Division por cero\"",
+            Self::JoinFailure => "ERROR \"Fallo en el Join\"",
+            Self::LockFailure => "ERROR \"Fallo en el Lock\"",
+            Self::ParseFailure => "ERROR \"Fallo en el Parseo\"",
+            Self::WritingFailure => "ERROR \"Fallo la escritura\"",
+            Self::ListeningFailure => "ERROR \"Fallo la lectura\"",
+            Self::SocketFailure => "ERROR \"Fallo el Socket\"",
+            Self::FileOpenFailure => "ERROR \"Fallo la apertura del archivo\"",
+            Self::ReadLineFailure => "ERROR \"Fallo la lectura de la linea\"",
+            Self::ArgsLenFailure => "ERROR \"Fallo la cantidad de argumentos\"",
         }
     }
 }

@@ -1,8 +1,5 @@
 use tpi_calculadora_distribuida::{
-    calculator::Calculator,
-    errors::CalculatorErrors,
-    operation::Operation,
-    response::Response,
+    calculator::Calculator, errors::CalculatorErrors, operation::Operation, response::Response,
 };
 
 use std::{
@@ -97,6 +94,5 @@ fn handle_op(
         Err(_) => return Err(CalculatorErrors::LockFailure),
     };
 
-    Ok(calculator.apply(op)?)
+    calculator.apply(op)
 }
-
