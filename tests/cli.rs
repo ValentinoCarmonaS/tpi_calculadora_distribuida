@@ -42,7 +42,7 @@ fn run_client_with_input_file(
         .arg("--")
         .arg(addr)
         .arg(input_path)
-        .output() 
+        .output()
     {
         Ok(output) => output,
         Err(_) => return Err("Error in command execution"),
@@ -88,7 +88,8 @@ fn run_multiple_clients_concurrent(
 fn test_one_client_a_file() {
     let expected = "VALUE 31";
     let server = TestServer::start("127.0.0.1:8084").unwrap();
-    let (status, stdout) = run_client_with_input_file("127.0.0.1:8084", "tests/data/a.txt").unwrap();
+    let (status, stdout) =
+        run_client_with_input_file("127.0.0.1:8084", "tests/data/a.txt").unwrap();
 
     assert!(status.success(), "The program should have succeeded");
     assert!(
@@ -105,7 +106,8 @@ fn test_one_client_a_file() {
 fn test_one_client_b_file() {
     let expected = "VALUE 0";
     let server = TestServer::start("127.0.0.1:8081").unwrap();
-    let (status, stdout) = run_client_with_input_file("127.0.0.1:8081", "tests/data/b.txt").unwrap();
+    let (status, stdout) =
+        run_client_with_input_file("127.0.0.1:8081", "tests/data/b.txt").unwrap();
 
     assert!(status.success(), "The program should have succeeded");
     assert!(
@@ -122,7 +124,8 @@ fn test_one_client_b_file() {
 fn test_one_client_c_file() {
     let expected = "VALUE 0";
     let server = TestServer::start("127.0.0.1:8082").unwrap();
-    let (status, stdout) = run_client_with_input_file("127.0.0.1:8082", "tests/data/c.txt").unwrap();
+    let (status, stdout) =
+        run_client_with_input_file("127.0.0.1:8082", "tests/data/c.txt").unwrap();
 
     assert!(status.success(), "The program should have succeeded");
     assert!(
@@ -139,7 +142,8 @@ fn test_one_client_c_file() {
 fn test_one_client_d_file() {
     let expected = "VALUE 2";
     let server = TestServer::start("127.0.0.1:8083").unwrap();
-    let (status, stdout) = run_client_with_input_file("127.0.0.1:8083", "tests/data/d.txt").unwrap();
+    let (status, stdout) =
+        run_client_with_input_file("127.0.0.1:8083", "tests/data/d.txt").unwrap();
 
     assert!(status.success(), "The program should have succeeded");
     assert!(
@@ -156,9 +160,11 @@ fn test_one_client_d_file() {
 fn test_multiple_clients_concurrent_simple() {
     let server = TestServer::start("127.0.0.1:8085").unwrap();
 
-    let results =
-        run_multiple_clients_concurrent("127.0.0.1:8085", vec!["tests/data/a.txt", "tests/data/b.txt"])
-            .unwrap();
+    let results = run_multiple_clients_concurrent(
+        "127.0.0.1:8085",
+        vec!["tests/data/a.txt", "tests/data/b.txt"],
+    )
+    .unwrap();
 
     for (status, stdout) in &results {
         assert!(status.success(), "All clients should have succeeded");
