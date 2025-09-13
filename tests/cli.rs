@@ -1,3 +1,4 @@
+use std::fs::{remove_file, write};
 use std::process::{Child, Command, ExitStatus};
 use std::thread;
 use std::time::Duration;
@@ -31,7 +32,10 @@ impl TestServer {
     }
 }
 
-fn run_client_with_input_file(addr: &str, input_path: &str) -> Result<(ExitStatus, String), &'static str> {
+fn run_client_with_input_file(
+    addr: &str,
+    input_path: &str,
+) -> Result<(ExitStatus, String), &'static str> {
     let output = match Command::new("cargo")
         .arg("run")
         .arg("--bin")
@@ -53,15 +57,17 @@ fn run_client_with_input_file(addr: &str, input_path: &str) -> Result<(ExitStatu
     Ok((output.status, stdout))
 }
 
-fn run_multiple_clients_concurrent(addr: &str, inputs_paths: Vec<&str>) -> Result<Vec<(ExitStatus, String)>, &'static str> {
+fn run_multiple_clients_concurrent(
+    addr: &str,
+    inputs_paths: Vec<&str>,
+) -> Result<Vec<(ExitStatus, String)>, &'static str> {
     let mut handles = vec![];
     for input_path in inputs_paths {
         let addr_owned = addr.to_string();
         let input_path_owned = input_path.to_string();
 
-        let handle = thread::spawn(move || {
-            run_client_with_input_file(&addr_owned, &input_path_owned)
-        });
+        let handle =
+            thread::spawn(move || run_client_with_input_file(&addr_owned, &input_path_owned));
         handles.push(handle);
     }
 
@@ -71,20 +77,20 @@ fn run_multiple_clients_concurrent(addr: &str, inputs_paths: Vec<&str>) -> Resul
             Ok(result) => match result {
                 Ok(result) => results.push(result),
                 Err(e) => return Err(e),
-            }
+            },
             Err(_) => return Err("Thread join failed"),
         }
     }
-    
+
     Ok(results)
 }
 
 #[test]
-fn test_one_client_e_file() {
-    let expected = "VALUE 5";
-    let server = TestServer::start("127.0.0.1:8080").expect("Failed to start server");
-    let (status, stdout) = run_client_with_input_file("127.0.0.1:8080", "data/e.txt").unwrap();
-    
+fn test_one_client_a_file() {
+    let expected = "VALUE 31";
+    let server = TestServer::start("127.0.0.1:8080").unwrap();
+    let (status, stdout) = run_client_with_input_file("127.0.0.1:8080", "data/a.txt").unwrap();
+
     assert!(status.success(), "The program should have succeeded");
     assert!(
         stdout.contains(expected),
@@ -92,6 +98,291 @@ fn test_one_client_e_file() {
         expected,
         stdout
     );
-    
+
+    server.stop();
+}
+
+#[test]
+fn test_one_client_b_file() {
+    let expected = "VALUE 0";
+    let server = TestServer::start("127.0.0.1:8081").unwrap();
+    let (status, stdout) = run_client_with_input_file("127.0.0.1:8081", "data/b.txt").unwrap();
+
+    assert!(status.success(), "The program should have succeeded");
+    assert!(
+        stdout.contains(expected),
+        "The stdout doesn't contain the expected value. Expected: '{}', Got: '{}'",
+        expected,
+        stdout
+    );
+
+    server.stop();
+}
+
+#[test]
+fn test_one_client_c_file() {
+    let expected = "VALUE 0";
+    let server = TestServer::start("127.0.0.1:8082").unwrap();
+    let (status, stdout) = run_client_with_input_file("127.0.0.1:8082", "data/c.txt").unwrap();
+
+    assert!(status.success(), "The program should have succeeded");
+    assert!(
+        stdout.contains(expected),
+        "The stdout doesn't contain the expected value. Expected: '{}', Got: '{}'",
+        expected,
+        stdout
+    );
+
+    server.stop();
+}
+
+#[test]
+fn test_one_client_d_file() {
+    let expected = "VALUE 2";
+    let server = TestServer::start("127.0.0.1:8083").unwrap();
+    let (status, stdout) = run_client_with_input_file("127.0.0.1:8083", "data/d.txt").unwrap();
+
+    assert!(status.success(), "The program should have succeeded");
+    assert!(
+        stdout.contains(expected),
+        "The stdout doesn't contain the expected value. Expected: '{}', Got: '{}'",
+        expected,
+        stdout
+    );
+
+    server.stop();
+}
+
+#[test]
+fn test_multiple_clients_concurrent_simple() {
+    let server = TestServer::start("127.0.0.1:8085").unwrap();
+
+    let results =
+        run_multiple_clients_concurrent("127.0.0.1:8085", vec!["data/a.txt", "data/b.txt"])
+            .unwrap();
+
+    for (status, stdout) in &results {
+        assert!(status.success(), "All clients should have succeeded");
+        assert!(
+            stdout.contains("VALUE"),
+            "The stdout from client shuld have a final value"
+        );
+    }
+
+    server.stop();
+}
+
+#[test]
+fn test_arithmetic_overflow_underflow() {
+    let server = TestServer::start("127.0.0.1:8086").unwrap();
+
+    write("data/overflow_test.txt", "OP + 255\nOP + 1\n").unwrap();
+
+    let (status, stdout) =
+        run_client_with_input_file("127.0.0.1:8086", "data/overflow_test.txt").unwrap();
+
+    assert!(
+        status.success(),
+        "The program should handle overflow gracefully"
+    );
+    assert!(
+        stdout.contains("VALUE 0"), // 255 + 1 = 0
+        "Should handle u8 overflow with wrapping. Got: '{}'",
+        stdout
+    );
+
+    let _ = remove_file("data/overflow_test.txt");
+    server.stop();
+}
+
+#[test]
+fn test_client_invalid_arguments_count() {
+    let output = Command::new("cargo")
+        .arg("run")
+        .arg("--bin")
+        .arg("client")
+        .arg("--")
+        .arg("127.0.0.1:8087")
+        // Falta el argumento del archivo
+        .output()
+        .unwrap();
+
+    assert!(output.status.success(), "Should end successful");
+
+    let stderr = String::from_utf8(output.stderr).unwrap();
+    assert!(
+        stderr.contains("ERROR \"Fallo la cantidad de argumentos\""),
+        "Should show argument error. Got: '{}'",
+        stderr
+    );
+}
+
+#[test]
+fn test_client_invalid_server_address() {
+    // Crear archivo temporal
+    write("data/temp_test.txt", "OP + 1\n").unwrap();
+
+    let output = Command::new("cargo")
+        .arg("run")
+        .arg("--bin")
+        .arg("client")
+        .arg("--")
+        .arg("invalid_address:999999")
+        .arg("data/temp_test.txt")
+        .output()
+        .expect("Failed to execute command");
+
+    assert!(output.status.success(), "Should end successful");
+
+    let stderr = String::from_utf8(output.stderr).unwrap();
+    assert!(
+        stderr.contains("ERROR \"Fallo el Socket\""),
+        "Should show socket connection error. Got: '{}'",
+        stderr
+    );
+
+    // Cleanup
+    let _ = remove_file("data/temp_test.txt");
+}
+
+#[test]
+fn test_client_nonexistent_file() {
+    let server = TestServer::start("127.0.0.1:8088").unwrap();
+
+    let output = Command::new("cargo")
+        .arg("run")
+        .arg("--bin")
+        .arg("client")
+        .arg("--")
+        .arg("127.0.0.1:8088")
+        .arg("data/e.txt")
+        .output()
+        .expect("Failed to execute command");
+
+    assert!(output.status.success(), "Should end successful");
+
+    let stderr = String::from_utf8(output.stderr).unwrap();
+    assert!(
+        stderr.contains("ERROR \"Fallo la apertura del archivo\""),
+        "Should show file error. Got: '{}'",
+        stderr
+    );
+
+    server.stop();
+}
+
+#[test]
+fn test_server_invalid_arguments() {
+    let output = Command::new("cargo")
+        .arg("run")
+        .arg("--bin")
+        .arg("server")
+        // Sin argumentos
+        .output()
+        .expect("Failed to execute command");
+
+    assert!(output.status.success(), "Should end successful");
+
+    let stderr = String::from_utf8(output.stderr).unwrap();
+    assert!(
+        stderr.contains("ERROR \"Fallo la cantidad de argumentos\""),
+        "Should show argument error. Got: '{}'",
+        stderr
+    );
+}
+
+#[test]
+fn test_server_invalid_bind_address() {
+    let output = Command::new("cargo")
+        .arg("run")
+        .arg("--bin")
+        .arg("server")
+        .arg("--")
+        .arg("invalid_address:999999")
+        .output()
+        .expect("Failed to execute command");
+
+    assert!(output.status.success(), "Should end successful");
+
+    let stderr = String::from_utf8(output.stderr).unwrap();
+    assert!(
+        stderr.contains("ERROR \"Fallo el Socket\""),
+        "Should show socket binding error. Got: '{}'",
+        stderr
+    );
+}
+
+#[test]
+fn test_division_by_zero_error_handling() {
+    let server = TestServer::start("127.0.0.1:8089").unwrap();
+
+    write("data/div_zero_test.txt", "OP + 10\nOP / 0\n").unwrap();
+
+    let (status, stdout) =
+        run_client_with_input_file("127.0.0.1:8089", "data/div_zero_test.txt").unwrap();
+
+    assert!(
+        status.success(),
+        "Client should complete despite division by zero"
+    );
+    assert!(
+        stdout.contains("VALUE 10"),
+        "Value should remain unchanged after division by zero error. Got: '{}'",
+        stdout
+    );
+    assert!(
+        stdout.contains("ERROR \"Division por cero\""),
+        "Should show division by cero error. Got: '{}'",
+        stdout
+    );
+
+    let _ = remove_file("data/div_zero_test.txt");
+    server.stop();
+}
+
+#[test]
+fn test_invalid_operations_in_file() {
+    let server = TestServer::start("127.0.0.1:8090").unwrap();
+
+    write(
+        "data/invalid_ops_test.txt",
+        "OP + 5\nOP % 3\nOP * 2\nINVALID COMMAND\nOP - 1\n",
+    )
+    .unwrap();
+
+    let (status, stdout) =
+        run_client_with_input_file("127.0.0.1:8090", "data/invalid_ops_test.txt").unwrap();
+
+    assert!(
+        status.success(),
+        "Client should complete despite invalid operations"
+    );
+    assert!(
+        stdout.contains("VALUE 9"), // (5 * 2) - 1 = 9
+        "Should process valid operations and ignore invalid ones. Got: '{}'",
+        stdout
+    );
+
+    let _ = remove_file("data/invalid_ops_test.txt");
+    server.stop();
+}
+
+#[test]
+fn test_empty_file() {
+    let server = TestServer::start("127.0.0.1:8091").unwrap();
+
+    write("data/empty_test.txt", "").unwrap();
+
+    let (status, stdout) =
+        run_client_with_input_file("127.0.0.1:8091", "data/empty_test.txt").unwrap();
+
+    assert!(status.success(), "Client should handle empty file");
+    assert!(
+        stdout.contains("VALUE 0"),
+        "Should return initial calculator value (0). Got: '{}'",
+        stdout
+    );
+
+    let _ = remove_file("data/empty_test.txt");
     server.stop();
 }
