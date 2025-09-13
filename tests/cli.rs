@@ -21,7 +21,6 @@ impl TestServer {
             Err(_) => return Err("Error starting server"),
         };
 
-        // Dar tiempo al servidor para inicializar y bindear el socket
         thread::sleep(Duration::from_millis(500));
 
         Ok(TestServer { process })
@@ -43,7 +42,7 @@ fn run_client_with_input_file(
         .arg("--")
         .arg(addr)
         .arg(input_path)
-        .output()  // <- .output() espera a que el proceso termine
+        .output() 
     {
         Ok(output) => output,
         Err(_) => return Err("Error in command execution"),
@@ -88,8 +87,8 @@ fn run_multiple_clients_concurrent(
 #[test]
 fn test_one_client_a_file() {
     let expected = "VALUE 31";
-    let server = TestServer::start("127.0.0.1:8080").unwrap();
-    let (status, stdout) = run_client_with_input_file("127.0.0.1:8080", "data/a.txt").unwrap();
+    let server = TestServer::start("127.0.0.1:8084").unwrap();
+    let (status, stdout) = run_client_with_input_file("127.0.0.1:8084", "tests/data/a.txt").unwrap();
 
     assert!(status.success(), "The program should have succeeded");
     assert!(
@@ -106,7 +105,7 @@ fn test_one_client_a_file() {
 fn test_one_client_b_file() {
     let expected = "VALUE 0";
     let server = TestServer::start("127.0.0.1:8081").unwrap();
-    let (status, stdout) = run_client_with_input_file("127.0.0.1:8081", "data/b.txt").unwrap();
+    let (status, stdout) = run_client_with_input_file("127.0.0.1:8081", "tests/data/b.txt").unwrap();
 
     assert!(status.success(), "The program should have succeeded");
     assert!(
@@ -123,7 +122,7 @@ fn test_one_client_b_file() {
 fn test_one_client_c_file() {
     let expected = "VALUE 0";
     let server = TestServer::start("127.0.0.1:8082").unwrap();
-    let (status, stdout) = run_client_with_input_file("127.0.0.1:8082", "data/c.txt").unwrap();
+    let (status, stdout) = run_client_with_input_file("127.0.0.1:8082", "tests/data/c.txt").unwrap();
 
     assert!(status.success(), "The program should have succeeded");
     assert!(
@@ -140,7 +139,7 @@ fn test_one_client_c_file() {
 fn test_one_client_d_file() {
     let expected = "VALUE 2";
     let server = TestServer::start("127.0.0.1:8083").unwrap();
-    let (status, stdout) = run_client_with_input_file("127.0.0.1:8083", "data/d.txt").unwrap();
+    let (status, stdout) = run_client_with_input_file("127.0.0.1:8083", "tests/data/d.txt").unwrap();
 
     assert!(status.success(), "The program should have succeeded");
     assert!(
@@ -158,7 +157,7 @@ fn test_multiple_clients_concurrent_simple() {
     let server = TestServer::start("127.0.0.1:8085").unwrap();
 
     let results =
-        run_multiple_clients_concurrent("127.0.0.1:8085", vec!["data/a.txt", "data/b.txt"])
+        run_multiple_clients_concurrent("127.0.0.1:8085", vec!["tests/data/a.txt", "tests/data/b.txt"])
             .unwrap();
 
     for (status, stdout) in &results {
@@ -176,10 +175,10 @@ fn test_multiple_clients_concurrent_simple() {
 fn test_arithmetic_overflow_underflow() {
     let server = TestServer::start("127.0.0.1:8086").unwrap();
 
-    write("data/overflow_test.txt", "OP + 255\nOP + 1\n").unwrap();
+    write("tests/data/overflow_test.txt", "OP + 255\nOP + 1\n").unwrap();
 
     let (status, stdout) =
-        run_client_with_input_file("127.0.0.1:8086", "data/overflow_test.txt").unwrap();
+        run_client_with_input_file("127.0.0.1:8086", "tests/data/overflow_test.txt").unwrap();
 
     assert!(
         status.success(),
@@ -191,7 +190,7 @@ fn test_arithmetic_overflow_underflow() {
         stdout
     );
 
-    let _ = remove_file("data/overflow_test.txt");
+    let _ = remove_file("tests/data/overflow_test.txt");
     server.stop();
 }
 
@@ -203,7 +202,6 @@ fn test_client_invalid_arguments_count() {
         .arg("client")
         .arg("--")
         .arg("127.0.0.1:8087")
-        // Falta el argumento del archivo
         .output()
         .unwrap();
 
@@ -219,8 +217,7 @@ fn test_client_invalid_arguments_count() {
 
 #[test]
 fn test_client_invalid_server_address() {
-    // Crear archivo temporal
-    write("data/temp_test.txt", "OP + 1\n").unwrap();
+    write("tests/data/temp_test.txt", "OP + 1\n").unwrap();
 
     let output = Command::new("cargo")
         .arg("run")
@@ -228,7 +225,7 @@ fn test_client_invalid_server_address() {
         .arg("client")
         .arg("--")
         .arg("invalid_address:999999")
-        .arg("data/temp_test.txt")
+        .arg("tests/data/temp_test.txt")
         .output()
         .expect("Failed to execute command");
 
@@ -241,8 +238,7 @@ fn test_client_invalid_server_address() {
         stderr
     );
 
-    // Cleanup
-    let _ = remove_file("data/temp_test.txt");
+    let _ = remove_file("tests/data/temp_test.txt");
 }
 
 #[test]
@@ -255,7 +251,7 @@ fn test_client_nonexistent_file() {
         .arg("client")
         .arg("--")
         .arg("127.0.0.1:8088")
-        .arg("data/e.txt")
+        .arg("tests/data/e.txt")
         .output()
         .expect("Failed to execute command");
 
@@ -277,7 +273,6 @@ fn test_server_invalid_arguments() {
         .arg("run")
         .arg("--bin")
         .arg("server")
-        // Sin argumentos
         .output()
         .expect("Failed to execute command");
 
@@ -316,10 +311,10 @@ fn test_server_invalid_bind_address() {
 fn test_division_by_zero_error_handling() {
     let server = TestServer::start("127.0.0.1:8089").unwrap();
 
-    write("data/div_zero_test.txt", "OP + 10\nOP / 0\n").unwrap();
+    write("tests/data/div_zero_test.txt", "OP + 10\nOP / 0\n").unwrap();
 
     let (status, stdout) =
-        run_client_with_input_file("127.0.0.1:8089", "data/div_zero_test.txt").unwrap();
+        run_client_with_input_file("127.0.0.1:8089", "tests/data/div_zero_test.txt").unwrap();
 
     assert!(
         status.success(),
@@ -336,7 +331,7 @@ fn test_division_by_zero_error_handling() {
         stdout
     );
 
-    let _ = remove_file("data/div_zero_test.txt");
+    let _ = remove_file("tests/data/div_zero_test.txt");
     server.stop();
 }
 
@@ -345,13 +340,13 @@ fn test_invalid_operations_in_file() {
     let server = TestServer::start("127.0.0.1:8090").unwrap();
 
     write(
-        "data/invalid_ops_test.txt",
+        "tests/data/invalid_ops_test.txt",
         "OP + 5\nOP % 3\nOP * 2\nINVALID COMMAND\nOP - 1\n",
     )
     .unwrap();
 
     let (status, stdout) =
-        run_client_with_input_file("127.0.0.1:8090", "data/invalid_ops_test.txt").unwrap();
+        run_client_with_input_file("127.0.0.1:8090", "tests/data/invalid_ops_test.txt").unwrap();
 
     assert!(
         status.success(),
@@ -363,7 +358,7 @@ fn test_invalid_operations_in_file() {
         stdout
     );
 
-    let _ = remove_file("data/invalid_ops_test.txt");
+    let _ = remove_file("tests/data/invalid_ops_test.txt");
     server.stop();
 }
 
@@ -371,10 +366,10 @@ fn test_invalid_operations_in_file() {
 fn test_empty_file() {
     let server = TestServer::start("127.0.0.1:8091").unwrap();
 
-    write("data/empty_test.txt", "").unwrap();
+    write("tests/data/empty_test.txt", "").unwrap();
 
     let (status, stdout) =
-        run_client_with_input_file("127.0.0.1:8091", "data/empty_test.txt").unwrap();
+        run_client_with_input_file("127.0.0.1:8091", "tests/data/empty_test.txt").unwrap();
 
     assert!(status.success(), "Client should handle empty file");
     assert!(
@@ -383,6 +378,6 @@ fn test_empty_file() {
         stdout
     );
 
-    let _ = remove_file("data/empty_test.txt");
+    let _ = remove_file("tests/data/empty_test.txt");
     server.stop();
 }
