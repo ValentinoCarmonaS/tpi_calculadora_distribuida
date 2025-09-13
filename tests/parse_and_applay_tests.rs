@@ -1,14 +1,6 @@
-#[path = "./../src/calculator.rs"]
-mod calculator;
-#[path = "./../src/errors.rs"]
-mod errors;
-#[path = "./../src/operation.rs"]
-mod operation;
+use tpi_calculadora_distribuida::{calculator::Calculator, operation::Operation};
 
 use std::str::FromStr;
-
-use crate::calculator::Calculator;
-use crate::operation::Operation;
 
 #[test]
 fn test_parse_and_apply_add() {
