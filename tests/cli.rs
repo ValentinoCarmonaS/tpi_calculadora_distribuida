@@ -91,6 +91,8 @@ fn test_one_client_a_file() {
     let (status, stdout) =
         run_client_with_input_file("127.0.0.1:8084", "tests/data/a.txt").unwrap();
 
+    server.stop();
+
     assert!(status.success(), "The program should have succeeded");
     assert!(
         stdout.contains(expected),
@@ -98,8 +100,6 @@ fn test_one_client_a_file() {
         expected,
         stdout
     );
-
-    server.stop();
 }
 
 #[test]
@@ -109,6 +109,8 @@ fn test_one_client_b_file() {
     let (status, stdout) =
         run_client_with_input_file("127.0.0.1:8081", "tests/data/b.txt").unwrap();
 
+    server.stop();
+
     assert!(status.success(), "The program should have succeeded");
     assert!(
         stdout.contains(expected),
@@ -116,8 +118,6 @@ fn test_one_client_b_file() {
         expected,
         stdout
     );
-
-    server.stop();
 }
 
 #[test]
@@ -127,6 +127,8 @@ fn test_one_client_c_file() {
     let (status, stdout) =
         run_client_with_input_file("127.0.0.1:8082", "tests/data/c.txt").unwrap();
 
+    server.stop();
+
     assert!(status.success(), "The program should have succeeded");
     assert!(
         stdout.contains(expected),
@@ -134,8 +136,6 @@ fn test_one_client_c_file() {
         expected,
         stdout
     );
-
-    server.stop();
 }
 
 #[test]
@@ -145,6 +145,8 @@ fn test_one_client_d_file() {
     let (status, stdout) =
         run_client_with_input_file("127.0.0.1:8083", "tests/data/d.txt").unwrap();
 
+    server.stop();
+
     assert!(status.success(), "The program should have succeeded");
     assert!(
         stdout.contains(expected),
@@ -152,8 +154,6 @@ fn test_one_client_d_file() {
         expected,
         stdout
     );
-
-    server.stop();
 }
 
 #[test]
@@ -166,6 +166,8 @@ fn test_multiple_clients_concurrent_simple() {
     )
     .unwrap();
 
+    server.stop();
+
     for (status, stdout) in &results {
         assert!(status.success(), "All clients should have succeeded");
         assert!(
@@ -173,8 +175,6 @@ fn test_multiple_clients_concurrent_simple() {
             "The stdout from client shuld have a final value"
         );
     }
-
-    server.stop();
 }
 
 #[test]
@@ -186,6 +186,9 @@ fn test_arithmetic_overflow_underflow() {
     let (status, stdout) =
         run_client_with_input_file("127.0.0.1:8086", "tests/data/overflow_test.txt").unwrap();
 
+    server.stop();
+    let _ = remove_file("tests/data/overflow_test.txt");
+
     assert!(
         status.success(),
         "The program should handle overflow gracefully"
@@ -195,9 +198,6 @@ fn test_arithmetic_overflow_underflow() {
         "Should handle u8 overflow with wrapping. Got: '{}'",
         stdout
     );
-
-    let _ = remove_file("tests/data/overflow_test.txt");
-    server.stop();
 }
 
 #[test]
@@ -215,8 +215,8 @@ fn test_client_invalid_arguments_count() {
 
     let stderr = String::from_utf8(output.stderr).unwrap();
     assert!(
-        stderr.contains("ERROR \"Fallo la cantidad de argumentos\""),
-        "Should show argument error. Got: '{}'",
+        stderr.contains("ERROR \"invalid number of arguments\""),
+        "Should show argument length error. Got: '{}'",
         stderr
     );
 }
@@ -235,16 +235,16 @@ fn test_client_invalid_server_address() {
         .output()
         .expect("Failed to execute command");
 
+    let _ = remove_file("tests/data/temp_test.txt");
+
     assert!(output.status.success(), "Should end successful");
 
     let stderr = String::from_utf8(output.stderr).unwrap();
     assert!(
-        stderr.contains("ERROR \"Fallo el Socket\""),
+        stderr.contains("ERROR \"socket failure\""),
         "Should show socket connection error. Got: '{}'",
         stderr
     );
-
-    let _ = remove_file("tests/data/temp_test.txt");
 }
 
 #[test]
@@ -261,16 +261,16 @@ fn test_client_nonexistent_file() {
         .output()
         .expect("Failed to execute command");
 
+    server.stop();
+
     assert!(output.status.success(), "Should end successful");
 
     let stderr = String::from_utf8(output.stderr).unwrap();
     assert!(
-        stderr.contains("ERROR \"Fallo la apertura del archivo\""),
+        stderr.contains("ERROR \"file open failure\""),
         "Should show file error. Got: '{}'",
         stderr
     );
-
-    server.stop();
 }
 
 #[test]
@@ -286,7 +286,7 @@ fn test_server_invalid_arguments() {
 
     let stderr = String::from_utf8(output.stderr).unwrap();
     assert!(
-        stderr.contains("ERROR \"Fallo la cantidad de argumentos\""),
+        stderr.contains("ERROR \"invalid number of arguments\""),
         "Should show argument error. Got: '{}'",
         stderr
     );
@@ -307,7 +307,7 @@ fn test_server_invalid_bind_address() {
 
     let stderr = String::from_utf8(output.stderr).unwrap();
     assert!(
-        stderr.contains("ERROR \"Fallo el Socket\""),
+        stderr.contains("ERROR \"socket failure\""),
         "Should show socket binding error. Got: '{}'",
         stderr
     );
@@ -322,6 +322,9 @@ fn test_division_by_zero_error_handling() {
     let (status, stdout) =
         run_client_with_input_file("127.0.0.1:8089", "tests/data/div_zero_test.txt").unwrap();
 
+    let _ = remove_file("tests/data/div_zero_test.txt");
+    server.stop();
+
     assert!(
         status.success(),
         "Client should complete despite division by zero"
@@ -332,13 +335,10 @@ fn test_division_by_zero_error_handling() {
         stdout
     );
     assert!(
-        stdout.contains("ERROR \"Division por cero\""),
+        stdout.contains("ERROR \"division by zero\""),
         "Should show division by cero error. Got: '{}'",
         stdout
     );
-
-    let _ = remove_file("tests/data/div_zero_test.txt");
-    server.stop();
 }
 
 #[test]
@@ -354,6 +354,9 @@ fn test_invalid_operations_in_file() {
     let (status, stdout) =
         run_client_with_input_file("127.0.0.1:8090", "tests/data/invalid_ops_test.txt").unwrap();
 
+    let _ = remove_file("tests/data/invalid_ops_test.txt");
+    server.stop();
+
     assert!(
         status.success(),
         "Client should complete despite invalid operations"
@@ -363,9 +366,6 @@ fn test_invalid_operations_in_file() {
         "Should process valid operations and ignore invalid ones. Got: '{}'",
         stdout
     );
-
-    let _ = remove_file("tests/data/invalid_ops_test.txt");
-    server.stop();
 }
 
 #[test]
@@ -377,13 +377,13 @@ fn test_empty_file() {
     let (status, stdout) =
         run_client_with_input_file("127.0.0.1:8091", "tests/data/empty_test.txt").unwrap();
 
+    let _ = remove_file("tests/data/empty_test.txt");
+    server.stop();
+
     assert!(status.success(), "Client should handle empty file");
     assert!(
         stdout.contains("VALUE 0"),
         "Should return initial calculator value (0). Got: '{}'",
         stdout
     );
-
-    let _ = remove_file("tests/data/empty_test.txt");
-    server.stop();
 }

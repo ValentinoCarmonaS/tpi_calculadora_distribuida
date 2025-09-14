@@ -37,18 +37,18 @@ impl FromStr for Operation {
         match tokens[0] {
             "GET" => {
                 if tokens.len() != 1 {
-                    return Err(CalculatorErrors::ParseFailure);
+                    return Err(CalculatorErrors::ArgsLenFailure);
                 }
                 Ok(Self::Get)
             }
             "OP" => {
                 if tokens.len() != 3 {
-                    return Err(CalculatorErrors::ParseFailure);
+                    return Err(CalculatorErrors::ArgsLenFailure);
                 }
 
                 Ok(Self::get_op(tokens[1], tokens[2])?)
             }
-            _ => Err(CalculatorErrors::ParseFailure),
+            message => Err(CalculatorErrors::UnexpectedMessage(message.to_owned())),
         }
     }
 }
@@ -58,7 +58,7 @@ impl Operation {
         // Parse the operand into an u8.
         let operand: u8 = match operand.parse() {
             Ok(operand) => operand,
-            Err(_) => return Err(CalculatorErrors::ParseFailure),
+            Err(_) => return Err(CalculatorErrors::InvalidInteger(operand.to_owned())),
         };
 
         match operation {
@@ -66,7 +66,7 @@ impl Operation {
             "-" => Ok(Self::Sub(operand)),
             "*" => Ok(Self::Mul(operand)),
             "/" => Ok(Self::Div(operand)),
-            _ => Err(CalculatorErrors::InvalidOperation),
+            _ => Err(CalculatorErrors::InvalidOperation(operation.to_owned())),
         }
     }
 }
@@ -124,8 +124,8 @@ fn test_parse_op_error_lenght() {
     match Operation::from_str("OP / + 10") {
         Ok(_) => panic!("Should throw an error"),
         Err(e) => match e {
-            CalculatorErrors::ParseFailure => (),
-            _ => panic!("Should throw ParseFailure error"),
+            CalculatorErrors::ArgsLenFailure => (),
+            _ => panic!("Should throw an args length error, got: {:?}", e),
         },
     };
 }
@@ -141,8 +141,8 @@ fn test_parse_get_error_lenght() {
     match Operation::from_str("GET 10") {
         Ok(_) => panic!("Should throw an error"),
         Err(e) => match e {
-            CalculatorErrors::ParseFailure => (),
-            _ => panic!("Should throw ParseFailure error"),
+            CalculatorErrors::ArgsLenFailure => (),
+            _ => panic!("Should throw an args length error, got: {:?}", e),
         },
     };
 }
@@ -164,8 +164,8 @@ fn test_parse_invalid_operation() {
     match Operation::get_op("%", "10") {
         Ok(_) => panic!("Should throw an error"),
         Err(e) => match e {
-            CalculatorErrors::InvalidOperation => (),
-            _ => panic!("Should throw InvalidOperation error"),
+            CalculatorErrors::InvalidOperation(_) => (),
+            _ => panic!("Should throw InvalidOperation error, got: {:?}", e),
         },
     }
 }
@@ -175,8 +175,8 @@ fn test_parse_invalid_line() {
     match Operation::get_op("+", "- 10") {
         Ok(_) => panic!("Should throw an error"),
         Err(e) => match e {
-            CalculatorErrors::ParseFailure => (),
-            _ => panic!("Should throw ParseFailure error"),
+            CalculatorErrors::InvalidInteger(_) => (),
+            _ => panic!("Should throw InvalidInteger error, got: {:?}", e),
         },
     }
 }
@@ -186,8 +186,8 @@ fn test_parse_invalid_negative_operand_1() {
     match Operation::get_op("+", "-1") {
         Ok(_) => panic!("Should throw an error"),
         Err(e) => match e {
-            CalculatorErrors::ParseFailure => (),
-            _ => panic!("Should throw ParseFailure error"),
+            CalculatorErrors::InvalidInteger(_) => (),
+            _ => panic!("Should throw InvalidInteger error, got: {:?}", e),
         },
     }
 }
@@ -197,8 +197,8 @@ fn test_parse_invalid_operand_256() {
     match Operation::get_op("+", "256") {
         Ok(_) => panic!("Should throw an error"),
         Err(e) => match e {
-            CalculatorErrors::ParseFailure => (),
-            _ => panic!("Should throw ParseFailure error"),
+            CalculatorErrors::InvalidInteger(_) => (),
+            _ => panic!("Should throw InvalidInteger error, got: {:?}", e),
         },
     }
 }
