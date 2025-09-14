@@ -181,7 +181,7 @@ fn test_multiple_clients_concurrent_simple() {
 fn test_arithmetic_overflow_underflow() {
     let server = TestServer::start("127.0.0.1:8086").unwrap();
 
-    write("tests/data/overflow_test.txt", "OP + 255\nOP + 1\n").unwrap();
+    write("tests/data/overflow_test.txt", "+ 255\n+ 1\n").unwrap();
 
     let (status, stdout) =
         run_client_with_input_file("127.0.0.1:8086", "tests/data/overflow_test.txt").unwrap();
@@ -223,7 +223,7 @@ fn test_client_invalid_arguments_count() {
 
 #[test]
 fn test_client_invalid_server_address() {
-    write("tests/data/temp_test.txt", "OP + 1\n").unwrap();
+    write("tests/data/temp_test.txt", "+ 1\n").unwrap();
 
     let output = Command::new("cargo")
         .arg("run")
@@ -317,7 +317,7 @@ fn test_server_invalid_bind_address() {
 fn test_division_by_zero_error_handling() {
     let server = TestServer::start("127.0.0.1:8089").unwrap();
 
-    write("tests/data/div_zero_test.txt", "OP + 10\nOP / 0\n").unwrap();
+    write("tests/data/div_zero_test.txt", "+ 10\n/ 0\n").unwrap();
 
     let (status, stdout) =
         run_client_with_input_file("127.0.0.1:8089", "tests/data/div_zero_test.txt").unwrap();
@@ -347,7 +347,7 @@ fn test_invalid_operations_in_file() {
 
     write(
         "tests/data/invalid_ops_test.txt",
-        "OP + 5\nOP % 3\nOP * 2\nINVALID COMMAND\nOP - 1\n",
+        "+ 5\n% 3\n* 2\nINVALID COMMAND\n- 1\n",
     )
     .unwrap();
 
