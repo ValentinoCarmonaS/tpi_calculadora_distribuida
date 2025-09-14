@@ -11,6 +11,9 @@ use std::{
     thread,
 };
 
+/// The entry point for the server application.
+///
+/// The server listens for incoming client connections and processes their requests.
 fn main() {
     let args: Vec<String> = env::args().collect();
 
@@ -21,6 +24,11 @@ fn main() {
     server(&args[1]);
 }
 
+/// Starts the server and binds it to the specified address.
+///
+/// # Arguments:
+///
+/// * `addr` - The address to bind the server to.
 fn server(addr: &str) {
     let listener = match TcpListener::bind(addr) {
         Ok(listener) => listener,
@@ -33,6 +41,11 @@ fn server(addr: &str) {
     server_listening(listener);
 }
 
+/// Listens for incoming client connections and spawns a new thread for each connection.
+///
+/// # Arguments:
+///
+/// * `listener` - The TCP listener used to accept incoming connections.
 fn server_listening(listener: TcpListener) {
     let counter = Arc::new(Mutex::new(Calculator::default()));
     let mut handles = vec![];
@@ -61,6 +74,12 @@ fn server_listening(listener: TcpListener) {
     }
 }
 
+/// Handles a single client connection.
+///
+/// # Arguments:
+///
+/// * `stream` - The TCP stream used to communicate with the client.
+/// * `counter` - A shared reference to the calculator instance.
 fn handle_client(stream: TcpStream, counter: Arc<Mutex<Calculator>>) {
     let reader = BufReader::new(&stream);
 
@@ -83,6 +102,16 @@ fn handle_client(stream: TcpStream, counter: Arc<Mutex<Calculator>>) {
     }
 }
 
+/// Processes an operation received from the client.
+///
+/// # Arguments:
+///
+/// * `line` - The operation received from the client as a string.
+/// * `counter` - A shared reference to the calculator instance.
+///
+/// # Returns:
+///
+/// A `Response` indicating the result of the operation.
 fn handle_op(
     line: String,
     counter: &Arc<Mutex<Calculator>>,

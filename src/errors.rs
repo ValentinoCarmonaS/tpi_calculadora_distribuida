@@ -1,4 +1,7 @@
-/// An enum representing the possible errors that can occur in the calculator
+/// An enum representing the possible errors that can occur in the calculator.
+///
+/// Each variant corresponds to a specific error scenario that may arise during
+/// the operation of the calculator or its associated components.
 #[derive(Debug)]
 pub enum CalculatorErrors {
     // Client errors:
@@ -6,7 +9,7 @@ pub enum CalculatorErrors {
     ///
     /// client: OP / 0
     DivisionByZero,
-    /// An invalid operation massage was recived
+    /// The operation is not valid
     ///
     /// client: OP multiplicar 0
     InvalidOperation(String),

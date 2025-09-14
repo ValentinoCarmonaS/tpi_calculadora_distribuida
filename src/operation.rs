@@ -1,35 +1,36 @@
 use crate::errors::CalculatorErrors;
 use std::str::FromStr;
 
-/// An enum representing the possible operations that can be applied to the calculator
+/// An enum representing the possible operations that can be applied to the calculator.
+///
+/// Each variant corresponds to a specific arithmetic operation or a request to retrieve the current value.
 #[derive(PartialEq, Eq, Debug)]
 pub enum Operation {
-    /// Adds the given value to the calculator's value
+    /// Adds the given value to the calculator's value.
     Add(u8),
-    /// Subtracts the given value from the calculator's value
+    /// Subtracts the given value from the calculator's value.
     Sub(u8),
-    /// Multiplies the calculator's value by the given value
+    /// Multiplies the calculator's value by the given value.
     Mul(u8),
-    /// Divides the calculator's value by the given value
+    /// Divides the calculator's value by the given value.
     Div(u8),
-    /// Gets the calculator's value
+    /// Retrieves the calculator's current value.
     Get,
 }
 
 impl FromStr for Operation {
     type Err = CalculatorErrors;
 
-    /// Parses a string into an "Operation"
+    /// Parses a string into an `Operation`.
     ///
     /// # Arguments:
     ///
-    /// The string should be in the format "<operator> <operand>",
-    /// where <operator> is one of { "+", "-", "*", "/" }, and <operand> is a `u8` value
+    /// * `s` - A string slice representing the operation, in the format `<operator> <operand>`.
     ///
     /// # Errors:
     ///
-    /// Returns "CalculatorErrors::ParseFailure" if the string is not in the correct format,
-    /// or "CalculatorErrors::InvalidOperation" if the operator is not valid
+    /// Returns `CalculatorErrors::ParseFailure` if the string is not in the correct format,
+    /// or `CalculatorErrors::InvalidOperation` if the operator is not valid.
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         // Split the string into tokens separated by whitespace.
         let tokens: Vec<&str> = s.split_whitespace().collect();

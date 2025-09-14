@@ -5,6 +5,10 @@ use std::fs::File;
 use std::io::{BufRead, BufReader, Write};
 use std::net::TcpStream;
 
+/// The entry point for the client application.
+///
+/// The client reads operations from a file and sends them to the server.
+/// At the end, it retrieves the final value of the calculator.
 fn main() {
     let args: Vec<String> = env::args().collect();
 
@@ -20,6 +24,12 @@ fn main() {
     read_file(&args[2], stream);
 }
 
+/// Reads operations from a file and sends them to the server.
+///
+/// # Arguments:
+///
+/// * `path` - The path to the file containing the operations.
+/// * `stream` - The TCP stream used to communicate with the server.
 fn read_file(path: &str, mut stream: TcpStream) {
     let file = match File::open(path) {
         Ok(file) => file,
@@ -45,6 +55,12 @@ fn read_file(path: &str, mut stream: TcpStream) {
     read_response(&stream);
 }
 
+/// Sends a request to the server.
+///
+/// # Arguments:
+///
+/// * `stream` - A mutable reference to the TCP stream used to communicate with the server.
+/// * `data` - The data to send to the server.
 fn send_request(stream: &mut TcpStream, message_op: &str, data: String) {
     if stream
         .write_all(format!("{} {}\n", message_op, data).as_bytes())
@@ -58,6 +74,11 @@ fn send_request(stream: &mut TcpStream, message_op: &str, data: String) {
     };
 }
 
+/// Reads a response from the server.
+///
+/// # Arguments:
+///
+/// * `stream` - A mutable reference to the TCP stream used to communicate with the server.
 fn read_response(stream: &TcpStream) {
     let mut reader = BufReader::new(stream);
 

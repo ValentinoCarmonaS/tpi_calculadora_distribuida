@@ -1,29 +1,39 @@
 use crate::{errors::CalculatorErrors, operation::Operation};
 
-/// A basic calculator that operates on a `u8` value
+/// A basic calculator that operates on an 8-bit unsigned integer (u8).
 ///
-/// The possible values range from (0 to 255)
-/// Operations that exceed this range will wrap around
+/// The calculator supports basic arithmetic operations (addition, subtraction, multiplication, division)
+/// and maintains a single value. Operations that exceed the range of u8 (0-255) will wrap around.
 #[derive(Default, Debug)]
 pub struct Calculator {
     value: u8,
 }
 
 impl Calculator {
-    /// Returns the current value of the calculator
+    /// Returns the current value of the calculator.
+    ///
+    /// # Returns:
+    ///
+    /// The current value as a `u8`.
     pub fn value(&self) -> u8 {
         self.value
     }
 
-    /// Applies an operation to the calculator
+    /// Applies an operation to the calculator.
     ///
     /// # Arguments:
     ///
-    /// * op -> The operation to apply
+    /// * `op` - The operation to apply, represented as an `Operation` enum.
     ///
     /// # Errors:
     ///
-    /// Returns "CalculatorErrors::DivisionByZero" if a division by zero is attempted
+    /// Returns `CalculatorErrors::DivisionByZero` if a division by zero is attempted.
+    ///
+    /// # Returns:
+    ///
+    /// - `Ok(Some(u8))` if the operation is `Get`.
+    /// - `Ok(None)` for other operations.
+    /// - `Err(CalculatorErrors)` if an error occurs.
     pub fn apply(&mut self, op: Operation) -> Result<Option<u8>, CalculatorErrors> {
         match op {
             Operation::Add(operand) => self.value = self.value.wrapping_add(operand),
