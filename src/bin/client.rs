@@ -37,16 +37,16 @@ fn read_file(path: &str, mut stream: TcpStream) {
             }
         };
 
-        send_request(&mut stream, line);
-        read_response(&mut stream); // <------------ solo deve leer al final, sacar.
+        send_request(&mut stream, "OP", line);
+        read_response(&mut stream);
     }
 
-    send_request(&mut stream, "GET".to_owned());
+    send_request(&mut stream, "GET", "".to_owned());
     read_response(&mut stream);
 }
 
-fn send_request(stream: &mut TcpStream, data: String) {
-    if stream.write_all(format!("{}\n", data).as_bytes()).is_err() {
+fn send_request(stream: &mut TcpStream, message_op: &str, data: String) {
+    if stream.write_all(format!("{} {}\n", message_op, data).as_bytes()).is_err() {
         Response::Error(CalculatorErrors::WritingFailure).eprint();
     };
 
