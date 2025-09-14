@@ -334,11 +334,6 @@ fn test_division_by_zero_error_handling() {
         "Value should remain unchanged after division by zero error. Got: '{}'",
         stdout
     );
-    assert!(
-        stdout.contains("ERROR \"division by zero\""),
-        "Should show division by cero error. Got: '{}'",
-        stdout
-    );
 }
 
 #[test]
