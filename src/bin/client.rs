@@ -68,7 +68,8 @@ fn read_response(stream: &TcpStream) {
     };
 
     if response.starts_with("VALUE") {
-        print!("{}", response);
+        let ans: Vec<&str> = response.split(" ").collect();
+        print!("{}", ans[1]);
     }
     if response.starts_with("ERROR") {
         eprint!("{}", response);
