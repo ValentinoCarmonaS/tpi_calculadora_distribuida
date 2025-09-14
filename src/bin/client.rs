@@ -38,11 +38,11 @@ fn read_file(path: &str, mut stream: TcpStream) {
         };
 
         send_request(&mut stream, "OP", line);
-        read_response(&mut stream);
+        read_response(&stream);
     }
 
     send_request(&mut stream, "GET", "".to_owned());
-    read_response(&mut stream);
+    read_response(&stream);
 }
 
 fn send_request(stream: &mut TcpStream, message_op: &str, data: String) {
@@ -58,13 +58,19 @@ fn send_request(stream: &mut TcpStream, message_op: &str, data: String) {
     };
 }
 
-fn read_response(stream: &mut TcpStream) {
+fn read_response(stream: &TcpStream) {
     let mut reader = BufReader::new(stream);
+
     let mut response = String::new();
 
     if reader.read_line(&mut response).is_err() {
         return Response::Error(CalculatorErrors::ListeningFailure).eprint();
     };
 
-    println!("{}", response)
+    if response.starts_with("VALUE") {
+        println!("{}", response);
+    }
+    if response.starts_with("ERROR") {
+        eprintln!("{}", response);
+    }
 }
