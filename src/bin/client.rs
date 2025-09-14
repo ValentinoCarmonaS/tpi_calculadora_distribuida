@@ -46,7 +46,10 @@ fn read_file(path: &str, mut stream: TcpStream) {
 }
 
 fn send_request(stream: &mut TcpStream, message_op: &str, data: String) {
-    if stream.write_all(format!("{} {}\n", message_op, data).as_bytes()).is_err() {
+    if stream
+        .write_all(format!("{} {}\n", message_op, data).as_bytes())
+        .is_err()
+    {
         Response::Error(CalculatorErrors::WritingFailure).eprint();
     };
 
