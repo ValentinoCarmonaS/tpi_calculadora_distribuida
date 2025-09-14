@@ -68,9 +68,9 @@ fn read_response(stream: &TcpStream) {
     };
 
     if response.starts_with("VALUE") {
-        println!("{}", response);
+        print!("{}", response);
     }
     if response.starts_with("ERROR") {
-        eprintln!("{}", response);
+        eprint!("{}", response);
     }
 }
